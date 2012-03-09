@@ -5,12 +5,12 @@
 %% NO PART OF THIS CODE IS TO BE MODIFIED OUTSIDE OF GIT. LEGAL
 %% CONSEQUENCES WILL APPLY 
 %%
-clear all;
+clearvars -except allSpecies;
 %% A file containing all Matlab's information on each accession number
 tic;load('data.mat');elapsedTimeLoadStructureArray=toc;  % file must contain the SSIM distances between all organisms
 disp(['Loading the gene structure array is done ! It took: ' num2str(elapsedTimeLoadStructureArray) ' seconds']);
 %% Each sheet of the excel file generates a different figure, with different taxa included
-for sheet=1:5
+for sheet=6:6
 disp(['FIGURE  ' num2str(sheet) ' !!!'])   
     clearvars -except sheet allSpecies
     tic;[~,taxaToInclude,~]=xlsread('setsOfTaxaAndColors.xlsx',sheet);elapsedTimeLoadExcelSheet=toc;
@@ -24,7 +24,7 @@ disp(['Loading the excel sheet containing the specifications for figure ' num2st
         %temp=getgenbank(allSpecies{i});
         temp=allSpecies(i); % if data set is preloaded
         temp2=temp.SourceOrganism';
-        for j=1:length(taxaToInclude)
+        for j=1:size(taxaToInclude,2) % using length will run into problems when there' less than three taxa to include, because taxaToInclude will have more rows than columns. 
             if isequal(taxaToInclude{1},'all')==0
                 shouldWeKeepThisOrganism=shouldWeKeepThisOrganism+mod(isempty(strfind(temp2(1:end),taxaToInclude{1,j}))+1,2); %if isempty is 1, then the organism is not in one of the desired taxa, so we want 'shouldWeKeepThisOrganism' to remain as 0, so we turn 1 into 0 by adding 1 (to make it 2) then modding it with 2 (to get 0), if isempty gives 0, then we turn it into 1 by adding 1 to it, then modding it with 2 which keeps it at one. We could also just subtract 1 in both cases, and then do shouldWeKeepThisOrganism=abs(shouldWeKeepThisOrganism+(isEmpty... -1)
             else
@@ -37,7 +37,7 @@ disp(['Loading the excel sheet containing the specifications for figure ' num2st
 disp(['Total number of organisms in unfiltered dataset:' num2str(i)]) 
     %% Make a gene structure array called geneData which is the relavent subset of the gene structure array allSpecies, and assign the appopriate colors to organisms according to their taxa
     for i=1:length(geneData) % can't include this in the loop above because some structures will already have the fileds 'taxonForOurPurposes' and 'color' but we'll be assigning geneData(i+1)=allSpecies(j) where allSpecies(j) does not have those fields, so we'll get the error "subscripted assignment between dissimilar structures", look into a way to fix this! Perhaps just add those fields as empty shit to the whole allOrganisms structure
-        for k=1:length(taxaToInclude)
+        for k=1:size(taxaToInclude,2) % using length will run into problems when there' less than three taxa to include, because taxaToInclude will have more rows than columns. 
             temp=geneData(i).SourceOrganism';
             if mod(isempty(strfind(temp(1:end),taxaToInclude{1,k}))+1,2)
                 geneData(i).taxonForOurPurposes=taxaToInclude{1,k};geneData(i).color=colors{k};geneData(i).taxonForLegend=taxaToInclude{2,k};
@@ -52,9 +52,10 @@ disp(['Total number of organisms in filtered dataset:' num2str(i)])
     end
     % Or if if you have matrix for ALL organisms already:
     %ssimDistances(indices,indices)=ssim(indices,indices);
+disp(['Creating the ssim distance matrix for figure ' num2str(sheet) ' is done !']);
     %% Classical Multidimensional Scaling
     tic;Y = cmdscale(squareform(ssimDistances));elapsedTimeMDS=toc;
-disp(['MDS calculation is done ! It took: ' num2str(elapsedTimeMDS) ' seconds']);
+disp(['MDS calculation for figure ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeMDS) ' seconds']);
     %% Rotations and Scaling
     desiredSize=1;
     currentLargestSizeY=max(Y(:,2));currentLargestSizeX=max(Y(:,1));
@@ -75,6 +76,7 @@ disp(['MDS calculation is done ! It took: ' num2str(elapsedTimeMDS) ' seconds'])
     % offsetX = desiredSize/currentLargestSizeX;
     % Y(:,1)=Y(:,1)*offsetX;
     Y(:,1)=2*(Y(:,1)-currentSmallestSizeX)/(currentLargestSizeX-currentSmallestSizeX)-1; % scale x-values to be between -1 and 1
+disp(['The MDS data for figure ' num2str(sheet) ' has been rescaled for optimal display!']);
     %% Make the figure
     tic;
     figure(sheet);
