@@ -6,9 +6,9 @@
 %%
 clear all;
 %%
-outputFileName='datadatadatarenamelaytah';
+outputFileName='2012-07-12-data';
 %%
-tic;accessionNumbers=importdata('2012-03-17-accessionNumbers.txt');elapsedTimeLoadAccessionNumbers=toc;  %A file containing: Line 1: the http://www.ncbi.nlm.nih.gov/nuccore search query used to get this dataset, Lines 2 to end: the accession numbers
+tic;accessionNumbers=importdata('2012-07-12-accessionNumbers.txt');elapsedTimeLoadAccessionNumbers=toc;  %A file containing: Line 1: the http://www.ncbi.nlm.nih.gov/nuccore search query used to get this dataset, Lines 2 to end: the accession numbers
 disp(['Loading the file containing the accession numbers is done ! It took: ' num2str(elapsedTimeLoadAccessionNumbers) ' seconds']);
 %%
 warning off all
@@ -29,6 +29,7 @@ for i=1:length(allSpecies)
     %     set(gcf,'Visible', 'off'); % commenting this and the one below speeds things up
     %     figure('Visible', 'off');
     allSpecies(i).CGR2dPixelMap = rgb2gray(allSpecies(i).CGR2dPixelMap); 
+    allSpecies(i).CGR2dPixelMap(1,:)=[];allSpecies(i).CGR2dPixelMap(end,:)=[];allSpecies(i).CGR2dPixelMap(:,1)=[];allSpecies(i).CGR2dPixelMap(:,end)=[];
     %if mod(i,500)==0;save('dataForParticularDataSet.mat','allSpecies');end %saving the entire array takes less than a minute, so it's not a major speed issue to be doing this in case matlab crashes midway
 disp(['Getting the pixel map for the sequence of accession number ' num2str(i) ' is done !']);
 end
