@@ -3,12 +3,16 @@
 
 %% NO PART OF THIS CODE IS TO BE MODIFIED OUTSIDE OF GIT. LEGAL CONSEQUENCES WILL APPLY
 function genomicMDS(dataFile,firstFigureNumber,lastFigureNumber)
-cloase('all'); % it's important to close the figures because in case hole('off') wasn't called, this will ensure we don't have the new points plotted over the old points (which can look bizarre since matlab's MDS doesn't seem to be deterministic, so plotting the same dataset twice could give two different things on top of each other
+close('all'); % it's important to close the figures because in case hole('off') wasn't called, this will ensure we don't have the new points plotted over the old points (which can look bizarre since matlab's MDS doesn't seem to be deterministic, so plotting the same dataset twice could give two different things on top of each other
 % clearvars -except dataFile firstFigureNumber lastFigureNumber; % might want to do because datafile might be 2GB and might be in the workspace
 % disp(['All variables except for allSpecies cleared !']);
 %% A file containing all Matlab's information on each accession number
+if isstruct(dataFile);
+allSpecies=dataFile;clear('dataFile'); % don't need to worry about memory duplication because it does 'lazy copying'
+else
 tic;load(dataFile);elapsedTimeLoadStructureArray=toc;  % file must contain the SSIM distances between all organisms
-disp(['Loading the gene structure array is done ! It took: ' num2str(elapsedTimeLoadStructureArray) ' seconds']);
+disp(['Loading the gene structure array is done ! It took: ' num2str(elapsedTimeLoadStructureArray) ' seconds']);        
+end
 %% Each sheet of the excel file generates a different figure, with different taxa included
 for sheet=firstFigureNumber:lastFigureNumber
     disp(['FIGURE  ' num2str(sheet) ' !!!'])
@@ -30,7 +34,9 @@ for sheet=firstFigureNumber:lastFigureNumber
                 shouldWeKeepThisOrganism=1; % if we want ALL organisms then we obviously want shouldWeKeepThisOrganism = 1
             end
             if shouldWeKeepThisOrganism==1;
-                numberOfOrganismsInEachTaxon(j)=numberOfOrganismsInEachTaxon(j)+1;indices(chosenOrganismIndex)=i;geneData(chosenOrganismIndex)=temp;speciesDataSet{chosenOrganismIndex}=geneData(chosenOrganismIndex).Accession;chosenOrganismIndex=chosenOrganismIndex+1;shouldWeKeepThisOrganism=0;end
+                indices(chosenOrganismIndex)=i;    geneData(chosenOrganismIndex)=temp;
+                numberOfOrganismsInEachTaxon(j)=numberOfOrganismsInEachTaxon(j)+1;  chosenOrganismIndex=chosenOrganismIndex+1;   shouldWeKeepThisOrganism=0;
+            end
         end
     end
     disp(['Total number of organisms in unfiltered dataset:' num2str(i)])
@@ -82,14 +88,16 @@ for sheet=firstFigureNumber:lastFigureNumber
     tic;
     figure(sheet);
     hold('on')
+    %organismsToExcludeFromPlot=506:562;
     for i = 1:length(geneData)
-        %for i = 1:15
-        for j=1:size(taxaToInclude,2)
-            %        for j=[1 4 5]
-            if strcmp(geneData(i).taxonForLegend,taxaToInclude{2,j})
-                plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',5,'MarkerFaceColor',geneData(i).color,'MarkerEdgeColor','k'); %#ok<AGROW> % with black outline
-                if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+.0025, Y(i,2), int2str(i), 'HorizontalAlignment', 'left', 'Color', geneData(i).color);end;
-                %plotHandle(j)=plot3(Y(i,1),Y(i,2),Y(i,3),strcat(geneData(i).color,'o'),'MarkerSize',6,'MarkerFaceColor',geneData(i).color);
+        %if ~ismember(indices(i),organismsToExcludeFromPlot)
+            for j=1:size(taxaToInclude,2)
+            %for j=[3]
+                if strcmp(geneData(i).taxonForLegend,taxaToInclude{2,j})
+                    plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',5,'MarkerFaceColor',geneData(i).color,'MarkerEdgeColor','k'); % with black outline
+                    if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+.0025, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', geneData(i).color);end;
+                    %plotHandle(j)=plot3(Y(i,1),Y(i,2),Y(i,3),strcat(geneData(i).color,'o'),'MarkerSize',6,'MarkerFaceColor',geneData(i).color);
+                end
             end
         end
     end
@@ -103,13 +111,13 @@ for sheet=firstFigureNumber:lastFigureNumber
     maximumError=max(abs(squareform(ssimDistances) - pdist(Y(:,1:2))));averageError=sum(abs(squareform(ssimDistances) - pdist(Y(:,1:2))))/(length(squareform(ssimDistances)));averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2=(averageError/(2*sqrt(2)))*100; %longest possible line in a square of length 2 is 2*sqrt(2)
     disp(['The Maximum Error for the plot is ' num2str(maximumError)]);disp(['The Average Error for the plot is ' num2str(averageError)]);disp(['The Percentage of Error for the plot is ' num2str(averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2)]);
     %% Print the excel file with information about each species
-%     for i=1:length(geneData)
-%         Accession_Number=cellstr(geneData(1,i).LocusName);Sequence_length=cellstr(geneData(1,i).LocusSequenceLength);
-%         color_array=(geneData(i).color);temp=geneData(i).SourceOrganism';phylum=cellstr(temp(:,2)');name=cellstr(temp(:,1)');number=cellstr(int2str(i));
-%     end
-%     
-%     columnHeader = {'NUMBER','X-COORDINATES', 'Y-CORDINTATES','Accesion_Number','NAME','SEQUENCE LENGTH','KINGDOM-GENUS','COLOR'};
-%     speciesInformation=[Accession_Number,name,Sequence_length,phylum];coordinates=[Y(:,1),Y(:,2)];
-%     xlswrite('Dataset.xls', columnHeader ,sheet,'A1'); xlswrite('Dataset.xls', number,sheet,'A2');
-%     xlswrite('Dataset.xls', coordinates,sheet,'B2'); xlswrite('Dataset.xls',speciesInformation,sheet,'D2');xlswrite('Dataset.xls', color_array,sheet,'H3');
+    %     for i=1:length(geneData)
+    %         Accession_Number=cellstr(geneData(1,i).LocusName);Sequence_length=cellstr(geneData(1,i).LocusSequenceLength);
+    %         color_array=(geneData(i).color);temp=geneData(i).SourceOrganism';phylum=cellstr(temp(:,2)');name=cellstr(temp(:,1)');number=cellstr(int2str(i));
+    %     end
+    %
+    %     columnHeader = {'NUMBER','X-COORDINATES', 'Y-CORDINTATES','Accesion_Number','NAME','SEQUENCE LENGTH','KINGDOM-GENUS','COLOR'};
+    %     speciesInformation=[Accession_Number,name,Sequence_length,phylum];coordinates=[Y(:,1),Y(:,2)];
+    %     xlswrite('Dataset.xls', columnHeader ,sheet,'A1'); xlswrite('Dataset.xls', number,sheet,'A2');
+    %     xlswrite('Dataset.xls', coordinates,sheet,'B2'); xlswrite('Dataset.xls',speciesInformation,sheet,'D2');xlswrite('Dataset.xls', color_array,sheet,'H3');
 end % loop through each sheet (each choice of taxa for a particular figure) of excel file
