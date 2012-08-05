@@ -8,10 +8,10 @@ close('all'); % it's important to close the figures because in case hole('off') 
 % disp(['All variables except for allSpecies cleared !']);
 %% A file containing all Matlab's information on each accession number
 if isstruct(dataFile);
-allSpecies=dataFile;clear('dataFile'); % don't need to worry about memory duplication because it does 'lazy copying'
+    allSpecies=dataFile;clear('dataFile'); % don't need to worry about memory duplication because it does 'lazy copying'
 else
-tic;load(dataFile);elapsedTimeLoadStructureArray=toc;  % file must contain the SSIM distances between all organisms
-disp(['Loading the gene structure array is done ! It took: ' num2str(elapsedTimeLoadStructureArray) ' seconds']);        
+    tic;load(dataFile);elapsedTimeLoadStructureArray=toc;  % file must contain the SSIM distances between all organisms
+    disp(['Loading the gene structure array is done ! It took: ' num2str(elapsedTimeLoadStructureArray) ' seconds']);
 end
 %% Each sheet of the excel file generates a different figure, with different taxa included
 for sheet=firstFigureNumber:lastFigureNumber
@@ -91,13 +91,12 @@ for sheet=firstFigureNumber:lastFigureNumber
     %organismsToExcludeFromPlot=506:562;
     for i = 1:length(geneData)
         %if ~ismember(indices(i),organismsToExcludeFromPlot)
-            for j=1:size(taxaToInclude,2)
+        for j=1:size(taxaToInclude,2)
             %for j=[3]
-                if strcmp(geneData(i).taxonForLegend,taxaToInclude{2,j})
-                    plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',5,'MarkerFaceColor',geneData(i).color,'MarkerEdgeColor','k'); % with black outline
-                    if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+.0025, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', geneData(i).color);end;
-                    %plotHandle(j)=plot3(Y(i,1),Y(i,2),Y(i,3),strcat(geneData(i).color,'o'),'MarkerSize',6,'MarkerFaceColor',geneData(i).color);
-                end
+            if strcmp(geneData(i).taxonForLegend,taxaToInclude{2,j})
+                plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',5,'MarkerFaceColor',geneData(i).color,'MarkerEdgeColor','k'); % with black outline
+                if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+.0025, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', geneData(i).color);end;
+                %plotHandle(j)=plot3(Y(i,1),Y(i,2),Y(i,3),strcat(geneData(i).color,'o'),'MarkerSize',6,'MarkerFaceColor',geneData(i).color);
             end
         end
     end
@@ -110,14 +109,30 @@ for sheet=firstFigureNumber:lastFigureNumber
     %% Error calculations
     maximumError=max(abs(squareform(ssimDistances) - pdist(Y(:,1:2))));averageError=sum(abs(squareform(ssimDistances) - pdist(Y(:,1:2))))/(length(squareform(ssimDistances)));averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2=(averageError/(2*sqrt(2)))*100; %longest possible line in a square of length 2 is 2*sqrt(2)
     disp(['The Maximum Error for the plot is ' num2str(maximumError)]);disp(['The Average Error for the plot is ' num2str(averageError)]);disp(['The Percentage of Error for the plot is ' num2str(averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2)]);
-    %% Print the excel file with information about each species
-    %     for i=1:length(geneData)
-    %         Accession_Number=cellstr(geneData(1,i).LocusName);Sequence_length=cellstr(geneData(1,i).LocusSequenceLength);
-    %         color_array=(geneData(i).color);temp=geneData(i).SourceOrganism';phylum=cellstr(temp(:,2)');name=cellstr(temp(:,1)');number=cellstr(int2str(i));
-    %     end
-    %
-    %     columnHeader = {'NUMBER','X-COORDINATES', 'Y-CORDINTATES','Accesion_Number','NAME','SEQUENCE LENGTH','KINGDOM-GENUS','COLOR'};
-    %     speciesInformation=[Accession_Number,name,Sequence_length,phylum];coordinates=[Y(:,1),Y(:,2)];
-    %     xlswrite('Dataset.xls', columnHeader ,sheet,'A1'); xlswrite('Dataset.xls', number,sheet,'A2');
-    %     xlswrite('Dataset.xls', coordinates,sheet,'B2'); xlswrite('Dataset.xls',speciesInformation,sheet,'D2');xlswrite('Dataset.xls', color_array,sheet,'H3');
+    %% Print the excel file with information about each species   
+    tic;
+    columnHeader = {'NUMBER','X-COORDINATES', 'Y-CORDINTATES','ACCESSION NUMBER','NAME','SEQUENCE LENGTH','COLOR','TAXA'};
+    
+    Species_Information_For_Spreadsheet=cell(length(geneData),27);
+    for i=1:length(geneData)
+        Species_Information_For_Spreadsheet(i,1)=cellstr(int2str(i));                               % Numerical identity
+        Species_Information_For_Spreadsheet(i,4)=cellstr(geneData(i).Accession);                    % Accession Number
+        Species_Information_For_Spreadsheet(i,5)=cellstr(geneData(i).SourceOrganism(1,1:end));      % Name of species
+        Species_Information_For_Spreadsheet(i,6)=cellstr(geneData(i).LocusSequenceLength);          % Sequence length
+        Species_Information_For_Spreadsheet(i,7)=cellstr(geneData(i).color);                        % Color
+        Species_Taxa=strtrim(regexp(sprintf((geneData(i).SourceOrganism(2:end,:))'),';','split'));  % turn SourceOrganism for species i into a 1xN cell array of taxon names
+        for j=1:length(Species_Taxa) 
+        Species_Information_For_Spreadsheet(i,6+j)=Species_Taxa(j);                                 
+        end
+    end
+    
+    Species_Information_For_Spreadsheet(:,2)=cellstr(num2str(Y(:,1)));                                                % X-coordinate
+    Species_Information_For_Spreadsheet(:,3)=cellstr(num2str(Y(:,2)));                                                % Y-coordinate
+       
+    xlswrite('Dataset.xls', columnHeader ,sheet,'A1');
+    xlswrite('Dataset.xls', Species_Information_For_Spreadsheet,sheet,'A2');
+    
+    elapsedTimeWritingToExcelFile=toc;
+    disp(['Writing to the excel file ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeWritingToExcelFile) ' seconds']);
 end % loop through each sheet (each choice of taxa for a particular figure) of excel file
+end % function (this end statement is not necessary, but once when I didn't have it there and I had an extra end statement in the file, I didn't get an error because it assigned that extra end statement to end the function)

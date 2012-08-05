@@ -17,10 +17,11 @@ for i=1:length(accessionNumbers)-1 %if this loop is slow, consider preallocating
     allSpecies(i)=getgenbank(accessionNumbers{i+1}); %the plus 1 is due to the fact that the first cell element of accessionNumbers isn't an accession number but just the search query that was used to get these accession numbers
     disp(['Data has now been loaded for accession number ' num2str(i) ' of ' num2str(length(accessionNumbers)-1)]); 
 end
-save(outputFileName,'allSpecies'); 
+save(outputFileName,'allSpecies','-v7.3'); % v7.3 can only load in R2006b or later, but supports data greater than 2GB on 64-bit systems.
 elapsedTimeGetGeneBankInformationForAllAccessionNumbers=toc;
 disp(['Getting gene bank information for all accession numbers is done ! It took: ' num2str(elapsedTimeGetGeneBankInformationForAllAccessionNumbers) ' seconds']);
-%% 12 minutes for 578 species: NEED THE PICTURES TO BE VISIBLE, THEREFORE THE WINDOWS HAVE TO BE OPEN AND THE MONITOR HAS TO BE ON, IN ORDER FOR THIS TO WORK !
+%% make CGR diagrams, and saves pixelmaps (very pixelated, but the SSIM code works with this granularity) to the structure field allSpecies.CGR2dPixelMap
+%% 12 minutes for 578 species, 2 hours for 3100 species: NEED THE PICTURES TO BE VISIBLE, THEREFORE THE WINDOWS HAVE TO BE OPEN AND THE MONITOR HAS TO BE ON, IN ORDER FOR THIS TO WORK !
 allSpecies(1).CGR2dPixelMap=[];
 %matlabpool('open','12') %lines below didn't work with parfor because the figure didn't pop up, havne't tried to fix it
 for i=1:length(allSpecies)
@@ -34,27 +35,47 @@ for i=1:length(allSpecies)
 disp(['Getting the pixel map for the sequence of accession number ' num2str(i) ' is done !']);
 end
 %matlabpool('close')
-save(outputFileName,'allSpecies'); 
-%% Calculate the SSIM distance matrix
+save(outputFileName,'allSpecies','-v7.3'); % v7.3 can only load in R2006b or later, but supports data greater than 2GB on 64-bit systems.
+%% Calculate the SSIM distance matrix.  CELL ARRAYS ARE NOT JIT-COMPLIANT, SO CODE BELOW MIGHT BE 60 times slower than it shoud according to : http://www.scottgorlin.com/wp-content/uploads/2008/01/day2.pdf
+%% 5 days for 2889 species with 8 parallel workers, X days for 3100 species with 12 parallel workers. 
+%% it will choke without proper error message if any two image pixelmaps are of different size
 ssimDistances = zeros(length(allSpecies));
-matlabpool('open','8')
+%matlabpool('open','12') % with more than 2889 organisms (1.5GB) it doesn't seem to be working on more than one worker. 
 tic;
 %allSpeciesPersistant=WorkerObjWrapper(allSpecies);
-parfor idx= 1:length(allSpecies)^2
+for idx= 1:length(allSpecies)^2
+%parfor idx= 1:length(allSpecies)^2
      [i, j] = ind2sub([length(allSpecies), length(allSpecies)], idx);
         if j > i
               ssimDistances(idx)=1-ssim_index(allSpecies(i).CGR2dPixelMap,allSpecies(j).CGR2dPixelMap);
         end
-        strcat('(i,j)=',num2str(i),',',num2str(j))
+        disp(strcat('(i,j)=',num2str(i),',',num2str(j)));
 end
 toc;
-matlabpool('close')
+%matlabpool('close')
 ssimDistances=ssimDistances+ssimDistances.';
-%%
+
 for i =1:length(allSpecies)
     allSpecies(i).ssimDistances=ssimDistances(i,:);
 end
-%% If ssimDistances field of allSpecies is already filled in - currently quite memory intensive because each worker grabs the 2GB structure array, delete things we don't need, like allSpecies.sequence
+
+save(outputFileName,'allSpecies','-v7.3'); % v7.3 can only load in R2006b or later, but supports data greater than 2GB on 64-bit systems.
+
+setpref('Internet','E_mail','dattani.nike@gmail.com');
+setpref('Internet','SMTP_Server','smtp.gmail.com');
+setpref('Internet','SMTP_Username','dattani.nike@gmail.com');
+setpref('Internet','SMTP_Password',emailPassword);
+
+props = java.lang.System.getProperties;
+props.setProperty('mail.smtp.auth','true');
+props.setProperty('mail.smtp.socketFactory.class', ...
+                  'javax.net.ssl.SSLSocketFactory');
+props.setProperty('mail.smtp.socketFactory.port','465');
+
+[~,hostname]= system('hostname');
+
+sendmail('dattani.nike@gmail.com',strcat('Completed MATLAB job on ',hostname,': ',mfilename))
+%% If ssimDistances field of allSpecies is already filled in. This is currently quite memory intensive because each worker grabs the 2GB structure array, delete things we don't need, like allSpecies.sequence
 ssimDistances=zeros(length(indices));
 for i=1:length(indices)
     ssimDistances(i,:)=allSpecies(indices(i)).ssimDistances(indices);
