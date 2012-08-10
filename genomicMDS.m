@@ -113,7 +113,7 @@ for sheet=firstFigureNumber:lastFigureNumber
     tic;
     columnHeader = {'NUMBER','X-COORDINATES', 'Y-CORDINTATES','ACCESSION NUMBER','NAME','SEQUENCE LENGTH','COLOR','TAXA'};
     
-    Species_Information_For_Spreadsheet=cell(length(geneData),27);
+    Species_Information_For_Spreadsheet=cell(length(geneData),27); % 27 is kind of arbitrary. I'm just hoping to make sure I have enough columns for all the taxonomic categories, some organisms have more of these than others and I don't know what the largest number of them is
     for i=1:length(geneData)
         Species_Information_For_Spreadsheet(i,1)=cellstr(int2str(i));                               % Numerical identity
         Species_Information_For_Spreadsheet(i,4)=cellstr(geneData(i).Accession);                    % Accession Number
@@ -122,7 +122,7 @@ for sheet=firstFigureNumber:lastFigureNumber
         Species_Information_For_Spreadsheet(i,7)=cellstr(geneData(i).color);                        % Color
         Species_Taxa=strtrim(regexp(sprintf((geneData(i).SourceOrganism(2:end,:))'),';','split'));  % turn SourceOrganism for species i into a 1xN cell array of taxon names
         for j=1:length(Species_Taxa) 
-        Species_Information_For_Spreadsheet(i,6+j)=Species_Taxa(j);                                 
+        Species_Information_For_Spreadsheet(i,7+j)=Species_Taxa(j);                                 
         end
     end
     
