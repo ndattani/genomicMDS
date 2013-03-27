@@ -2,7 +2,7 @@
 %% The owners of this code are Abu Sadat Md. Sayem, Nathanlial Bryans, Nike S. Dattani, and Ronghai Tu. The copyright is currently owned by Nike S. Dattani.
 
 %% NO PART OF THIS CODE IS TO BE MODIFIED OUTSIDE OF GIT. LEGAL CONSEQUENCES WILL APPLY
-function genomicMDS(dataFile,firstFigureNumber,lastFigureNumber)
+function genomicMDS(dataFile,vectorOfSheetsToUse,writeToExcel)
 close('all'); % it's important to close the figures because in case hole('off') wasn't called, this will ensure we don't have the new points plotted over the old points (which can look bizarre since matlab's MDS doesn't seem to be deterministic, so plotting the same dataset twice could give two different things on top of each other
 % clearvars -except dataFile firstFigureNumber lastFigureNumber; % might want to do because datafile might be 2GB and might be in the workspace
 % disp(['All variables except for allSpecies cleared !']);
@@ -14,9 +14,9 @@ else
     disp(['Loading the gene structure array is done ! It took: ' num2str(elapsedTimeLoadStructureArray) ' seconds']);
 end
 %% Each sheet of the excel file generates a different figure, with different taxa included
-for sheet=firstFigureNumber:lastFigureNumber
+for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetIndex);
     disp(['FIGURE  ' num2str(sheet) ' !!!'])
-    clearvars -except sheet allSpecies
+    clearvars -except sheet allSpecies writeToExcel vectorOfSheetsToUse
     tic;[whetherOrNotToPlotNumbers,taxaToInclude,~]=xlsread('setsOfTaxaAndColors.xlsx',sheet);elapsedTimeLoadExcelSheet=toc;
     disp(['Loading the excel sheet containing the specifications for figure ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeLoadExcelSheet) ' seconds']);
     taxaToInclude=taxaToInclude';
@@ -94,22 +94,25 @@ for sheet=firstFigureNumber:lastFigureNumber
         for j=1:size(taxaToInclude,2)
             %for j=[3]
             if strcmp(geneData(i).taxonForLegend,taxaToInclude{2,j})
-                plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',5,'MarkerFaceColor',geneData(i).color,'MarkerEdgeColor','k'); % with black outline
-                if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+.0025, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', geneData(i).color);end;
+                plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',7,'MarkerFaceColor',rgb(geneData(i).color),'MarkerEdgeColor','k'); % with black outline
+                if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+.0025, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', rgb(geneData(i).color));end;
                 %plotHandle(j)=plot3(Y(i,1),Y(i,2),Y(i,3),strcat(geneData(i).color,'o'),'MarkerSize',6,'MarkerFaceColor',geneData(i).color);
             end
         end
     end
     axis([-desiredSizeOfBorder desiredSizeOfBorder -desiredSizeOfBorder desiredSizeOfBorder]);axis square
+    axesHandle=copyobj(gca,gcf);set(axesHandle,'xaxislocation','top','yaxislocation','right');
     hold('on');box('on');
     set(gca,'XMinorTick','on','YMinorTick','on','LineWidth',3,'FontSize',16);
-    legendHandle=legend(plotHandle,strcat(taxaToInclude(2,:).',{' ('}, cellstr(num2str(numberOfOrganismsInEachTaxon)),{')'}));set(legendHandle,'Interpreter','latex','FontSize',16,'LineWidth',3,'Position',[0.747672758188061 0.753355153875044 0.134706814580032 0.139318885448916]);
+    legendHandle=legend(plotHandle,strcat(taxaToInclude(2,:).',{' ('}, cellstr(num2str(numberOfOrganismsInEachTaxon)),{')'}));
+    set(legendHandle,'Interpreter','latex','FontSize',16,'LineWidth',3,'Position',[0.747672758188061 0.753355153875044 0.134706814580032 0.139318885448916]);
     hold('off');elapsedTimeFigure=toc;
     disp(['Plotting the figure ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeFigure) ' seconds']);
     %% Error calculations
     maximumError=max(abs(squareform(ssimDistances) - pdist(Y(:,1:2))));averageError=sum(abs(squareform(ssimDistances) - pdist(Y(:,1:2))))/(length(squareform(ssimDistances)));averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2=(averageError/(2*sqrt(2)))*100; %longest possible line in a square of length 2 is 2*sqrt(2)
     disp(['The Maximum Error for the plot is ' num2str(maximumError)]);disp(['The Average Error for the plot is ' num2str(averageError)]);disp(['The Percentage of Error for the plot is ' num2str(averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2)]);
     %% Print the excel file with information about each species   
+    if writeToExcel==1; % it will take ages if you're working on a remote machine
     tic;
     columnHeader = {'NUMBER','X-COORDINATES', 'Y-CORDINTATES','ACCESSION NUMBER','NAME','SEQUENCE LENGTH','COLOR','TAXA'};
     
@@ -129,10 +132,204 @@ for sheet=firstFigureNumber:lastFigureNumber
     Species_Information_For_Spreadsheet(:,2)=cellstr(num2str(Y(:,1)));                                                % X-coordinate
     Species_Information_For_Spreadsheet(:,3)=cellstr(num2str(Y(:,2)));                                                % Y-coordinate
        
-    xlswrite('Dataset.xls', columnHeader ,sheet,'A1');
-    xlswrite('Dataset.xls', Species_Information_For_Spreadsheet,sheet,'A2');
+    xlswrite('Dataset.xlsx', columnHeader ,sheet,'A1'); % if you get the error:  Error using dlmwrite (line 118) The input cell array cannot be converted to a matrix. It means you don't have windows, don't have excel, or have the excel starter version
+    xlswrite('Dataset.xlsx', Species_Information_For_Spreadsheet,sheet,'A2');
     
     elapsedTimeWritingToExcelFile=toc;
     disp(['Writing to the excel file ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeWritingToExcelFile) ' seconds']);
+    end
 end % loop through each sheet (each choice of taxa for a particular figure) of excel file
 end % function (this end statement is not necessary, but once when I didn't have it there and I had an extra end statement in the file, I didn't get an error because it assigned that extra end statement to end the function)
+
+%% COLOR DEFINITIONS   Taken from Kristjan Jonasson's FEX "RGB triple of color name, version 2": http://www.mathworks.com/matlabcentral/fileexchange/24497-rgb-triple-of-color-name-version-2, with ReptileGreen and BirdOrange added manually by Nike Dattani on 2013/03/27/6:40PM GMT
+function rgb = rgb(s)
+  persistent num name
+  if isempty(num) % First time rgb is called
+    [num,name] = getcolors();
+    name = lower(name);
+    num = reshape(hex2dec(num), [], 3);
+    % Divide most numbers by 256 for "aesthetic" reasons (green=[0 0.5 0])
+    I = num < 240;  % (interpolate F0--FF linearly from 240/256 to 1.0)
+    num(I) = num(I)/256;
+    num(~I) = ((num(~I) - 240)/15 + 15)/16; + 240;
+  end
+  if strcmpi(s,'chart')
+    showcolors()
+  else
+    k = find(strcmpi(s, name));
+    if isempty(k)
+      error(['Unknown color: ' s]);
+    else
+      rgb = num(k(1), :);
+    end
+  end
+end
+function [hex,name] = getcolors()
+  css = {
+    %White colors
+    'FF','FF','FF', 'White'
+    'FF','FA','FA', 'Snow'
+    'F0','FF','F0', 'Honeydew'
+    'F5','FF','FA', 'MintCream'
+    'F0','FF','FF', 'Azure'
+    'F0','F8','FF', 'AliceBlue'
+    'F8','F8','FF', 'GhostWhite'
+    'F5','F5','F5', 'WhiteSmoke'
+    'FF','F5','EE', 'Seashell'
+    'F5','F5','DC', 'Beige'
+    'FD','F5','E6', 'OldLace'
+    'FF','FA','F0', 'FloralWhite'
+    'FF','FF','F0', 'Ivory'
+    'FA','EB','D7', 'AntiqueWhite'
+    'FA','F0','E6', 'Linen'
+    'FF','F0','F5', 'LavenderBlush'
+    'FF','E4','E1', 'MistyRose'
+    %Grey colors'
+    '80','80','80', 'Gray'
+    'DC','DC','DC', 'Gainsboro'
+    'D3','D3','D3', 'LightGray'
+    'C0','C0','C0', 'Silver'
+    'A9','A9','A9', 'DarkGray'
+    '69','69','69', 'DimGray'
+    '77','88','99', 'LightSlateGray'
+    '70','80','90', 'SlateGray'
+    '2F','4F','4F', 'DarkSlateGray'
+    '00','00','00', 'Black'
+    %Red colors
+    'FF','00','00', 'Red'
+    'FF','A0','7A', 'LightSalmon'
+    'FA','80','72', 'Salmon'
+    'E9','96','7A', 'DarkSalmon'
+    'F0','80','80', 'LightCoral'
+    'CD','5C','5C', 'IndianRed'
+    'DC','14','3C', 'Crimson'
+    'B2','22','22', 'FireBrick'
+    '8B','00','00', 'DarkRed'
+    %Pink colors
+    'FF','C0','CB', 'Pink'
+    'FF','B6','C1', 'LightPink'
+    'FF','69','B4', 'HotPink'
+    'FF','14','93', 'DeepPink'
+    'DB','70','93', 'PaleVioletRed'
+    'C7','15','85', 'MediumVioletRed'
+    %Orange colors
+    'FF','A5','00', 'Orange'
+    'FF','8C','00', 'DarkOrange'
+    'FF','7F','50', 'Coral'
+    'FF','63','47', 'Tomato'
+    'FF','45','00', 'OrangeRed'
+    'FF','88','00', 'BirdOrange'
+    %Yellow colors
+    'FF','FF','00', 'Yellow'
+    'FF','FF','E0', 'LightYellow'
+    'FF','FA','CD', 'LemonChiffon'
+    'FA','FA','D2', 'LightGoldenrodYellow'
+    'FF','EF','D5', 'PapayaWhip'
+    'FF','E4','B5', 'Moccasin'
+    'FF','DA','B9', 'PeachPuff'
+    'EE','E8','AA', 'PaleGoldenrod'
+    'F0','E6','8C', 'Khaki'
+    'BD','B7','6B', 'DarkKhaki'
+    'FF','D7','00', 'Gold'
+    %Brown colors
+    'A5','2A','2A', 'Brown'
+    'FF','F8','DC', 'Cornsilk'
+    'FF','EB','CD', 'BlanchedAlmond'
+    'FF','E4','C4', 'Bisque'
+    'FF','DE','AD', 'NavajoWhite'
+    'F5','DE','B3', 'Wheat'
+    'DE','B8','87', 'BurlyWood'
+    'D2','B4','8C', 'Tan'
+    'BC','8F','8F', 'RosyBrown'
+    'F4','A4','60', 'SandyBrown'
+    'DA','A5','20', 'Goldenrod'
+    'B8','86','0B', 'DarkGoldenrod'
+    'CD','85','3F', 'Peru'
+    'D2','69','1E', 'Chocolate'
+    '8B','45','13', 'SaddleBrown'
+    'A0','52','2D', 'Sienna'
+    '80','00','00', 'Maroon'
+    %Green colors
+    '00','80','00', 'Green'
+    '98','FB','98', 'PaleGreen'
+    '90','EE','90', 'LightGreen'
+    '9A','CD','32', 'YellowGreen'
+    'AD','FF','2F', 'GreenYellow'
+    '7F','FF','00', 'Chartreuse'
+    '7C','FC','00', 'LawnGreen'
+    '00','FF','00', 'Lime'
+    '32','CD','32', 'LimeGreen'
+    '00','FA','9A', 'MediumSpringGreen'
+    '00','FF','7F', 'SpringGreen'
+    '66','CD','AA', 'MediumAquamarine'
+    '7F','FF','D4', 'Aquamarine'
+    '20','B2','AA', 'LightSeaGreen'
+    '3C','B3','71', 'MediumSeaGreen'
+    '2E','8B','57', 'SeaGreen'
+    '8F','BC','8F', 'DarkSeaGreen'
+    '22','8B','22', 'ForestGreen'
+    '00','64','00', 'DarkGreen'
+    '6B','8E','23', 'OliveDrab'
+    '80','80','00', 'Olive'
+    '55','6B','2F', 'DarkOliveGreen'
+    '00','80','80', 'Teal'
+    '00','BB','00', 'ReptileGreen'
+    
+    %Blue colors
+    '00','00','FF', 'Blue'
+    'AD','D8','E6', 'LightBlue'
+    'B0','E0','E6', 'PowderBlue'
+    'AF','EE','EE', 'PaleTurquoise'
+    '40','E0','D0', 'Turquoise'
+    '48','D1','CC', 'MediumTurquoise'
+    '00','CE','D1', 'DarkTurquoise'
+    'E0','FF','FF', 'LightCyan'
+    '00','FF','FF', 'Cyan'
+    '00','FF','FF', 'Aqua'
+    '00','8B','8B', 'DarkCyan'
+    '5F','9E','A0', 'CadetBlue'
+    'B0','C4','DE', 'LightSteelBlue'
+    '46','82','B4', 'SteelBlue'
+    '87','CE','FA', 'LightSkyBlue'
+    '87','CE','EB', 'SkyBlue'
+    '00','BF','FF', 'DeepSkyBlue'
+    '1E','90','FF', 'DodgerBlue'
+    '64','95','ED', 'CornflowerBlue'
+    '41','69','E1', 'RoyalBlue'
+    '00','00','CD', 'MediumBlue'
+    '00','00','8B', 'DarkBlue'
+    '00','00','80', 'Navy'
+    '19','19','70', 'MidnightBlue'
+    %Purple colors
+    '80','00','80', 'Purple'
+    'E6','E6','FA', 'Lavender'
+    'D8','BF','D8', 'Thistle'
+    'DD','A0','DD', 'Plum'
+    'EE','82','EE', 'Violet'
+    'DA','70','D6', 'Orchid'
+    'FF','00','FF', 'Fuchsia'
+    'FF','00','FF', 'Magenta'
+    'BA','55','D3', 'MediumOrchid'
+    '93','70','DB', 'MediumPurple'
+    '99','66','CC', 'Amethyst'
+    '8A','2B','E2', 'BlueViolet'
+    '94','00','D3', 'DarkViolet'
+    '99','32','CC', 'DarkOrchid'
+    '8B','00','8B', 'DarkMagenta'
+    '6A','5A','CD', 'SlateBlue'
+    '48','3D','8B', 'DarkSlateBlue'
+    '7B','68','EE', 'MediumSlateBlue'
+    '4B','00','82', 'Indigo'
+    %Gray repeated with spelling grey
+    '80','80','80', 'Grey'
+    'D3','D3','D3', 'LightGrey'
+    'A9','A9','A9', 'DarkGrey'
+    '69','69','69', 'DimGrey'
+    '77','88','99', 'LightSlateGrey'
+    '70','80','90', 'SlateGrey'
+    '2F','4F','4F', 'DarkSlateGrey'
+    };
+  hex = css(:,1:3);
+  name = css(:,4);
+end
+%% ALL FEX FILES FO CONVERTING TICK LABELS TO LATEX ARE CURRENTLY NOT USER-FRIENDLY ENOUGH FOR THIS PROGRAM, SO WE AWAIT MATLAB BUILDING IN THIS FUNCTION
