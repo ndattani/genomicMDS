@@ -65,19 +65,20 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
     %% Rotations and Scaling
     desiredSize=1;
     desiredSizeOfBorder=desiredSize*1.1;
-    currentLargestSizeY=max(Y(:,2));currentLargestSizeX=max(Y(:,1));
-    currentSmallestSizeY=min(Y(:,2));currentSmallestSizeX=min(Y(:,1));
     
     %Flip the grid in the y direction (around the x axis)
     %Y(:,2)=-Y(:,2);
+    
+    %Flip the grid in the x direction (around the y axis)
+    %Y(:,1)=-Y(:,1);
+        
+    currentLargestSizeY=max(Y(:,2));currentLargestSizeX=max(Y(:,1));
+    currentSmallestSizeY=min(Y(:,2));currentSmallestSizeX=min(Y(:,1));
     
     %Used to readjust the scale for the y axis
     % offsetY = desiredSize/currentLargestSizeY;
     % Y(:,2)=Y(:,2)*offsetY;
     Y(:,2)=2*(Y(:,2)-currentSmallestSizeY)/(currentLargestSizeY-currentSmallestSizeY)-1; % scale y-values to be between -1 and 1
-    
-    %Flip the grid in the x direction (around the y axis)
-    %Y(:,1)=-Y(:,1);
     
     %Used to readjust the scale for the x axis
     % offsetX = desiredSize/currentLargestSizeX;
@@ -95,20 +96,27 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
             %for j=[3]
             if strcmp(geneData(i).taxonForLegend,taxaToInclude{2,j})
                 plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',7,'MarkerFaceColor',rgb(geneData(i).color),'MarkerEdgeColor','k'); % with black outline
-                if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+.0025, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', rgb(geneData(i).color));end;
+                if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+0.005, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', rgb(geneData(i).color));end;
                 %plotHandle(j)=plot3(Y(i,1),Y(i,2),Y(i,3),strcat(geneData(i).color,'o'),'MarkerSize',6,'MarkerFaceColor',geneData(i).color);
             end
         end
     end
-    axis([-desiredSizeOfBorder desiredSizeOfBorder -desiredSizeOfBorder desiredSizeOfBorder]);axis square
-    axesHandle=copyobj(gca,gcf);set(axesHandle,'xaxislocation','top','yaxislocation','right');
+axis([-desiredSizeOfBorder desiredSizeOfBorder -desiredSizeOfBorder desiredSizeOfBorder]);axis square
+%axis([-0.65 -0.3 -0.55 -0.25]);axis square
+
+%     fill([-1.13 -1.13 -0.995 -0.995],[-1.13 -0.995 -0.995 -1.13],'k') % bottom left corner
+%     fill([-1.13 -1.13 -0.995 -0.995],[0.995  1.13   1.13  0.995],'k') % top left corner
+%     fill([0.995 0.995  1.13    1.13],[-1.13 -0.995 -0.995 -1.13],'k') % bottom right corner
+%     fill([0.995 0.995  1.13    1.13],[0.995  1.13   1.13  0.995],'k') % top right corner
     hold('on');box('on');
-    set(gca,'XMinorTick','on','YMinorTick','on','LineWidth',3,'FontSize',16);
+    set(gca,'XMinorTick','on','YMinorTick','on','LineWidth',3,'FontSize',16 );
     legendHandle=legend(plotHandle,strcat(taxaToInclude(2,:).',{' ('}, cellstr(num2str(numberOfOrganismsInEachTaxon)),{')'}));
-    set(legendHandle,'Interpreter','latex','FontSize',16,'LineWidth',3,'Position',[0.747672758188061 0.753355153875044 0.134706814580032 0.139318885448916]);
+    set(legendHandle,'Interpreter','latex','FontSize',24,'LineWidth',3,'Position',[0.747672758188061 0.753355153875044 0.134706814580032 0.139318885448916]);
+    legendHandleChildren=get(legendHandle,'children');set(legendHandleChildren([1:3:end]),'MarkerSize',20)
+    % uistack(legendHandle,'top'); doesn't seem to work
+    axesHandle=copyobj(gca,gcf);set(axesHandle,'xaxislocation','top','yaxislocation','right');
     hold('off');elapsedTimeFigure=toc;
     disp(['Plotting the figure ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeFigure) ' seconds']);
-    %% Error calculations
     maximumError=max(abs(squareform(ssimDistances) - pdist(Y(:,1:2))));averageError=sum(abs(squareform(ssimDistances) - pdist(Y(:,1:2))))/(length(squareform(ssimDistances)));averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2=(averageError/(2*sqrt(2)))*100; %longest possible line in a square of length 2 is 2*sqrt(2)
     disp(['The Maximum Error for the plot is ' num2str(maximumError)]);disp(['The Average Error for the plot is ' num2str(averageError)]);disp(['The Percentage of Error for the plot is ' num2str(averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2)]);
     %% Print the excel file with information about each species   
@@ -141,7 +149,7 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
 end % loop through each sheet (each choice of taxa for a particular figure) of excel file
 end % function (this end statement is not necessary, but once when I didn't have it there and I had an extra end statement in the file, I didn't get an error because it assigned that extra end statement to end the function)
 
-%% COLOR DEFINITIONS   Taken from Kristjan Jonasson's FEX "RGB triple of color name, version 2": http://www.mathworks.com/matlabcentral/fileexchange/24497-rgb-triple-of-color-name-version-2, with ReptileGreen and BirdOrange added manually by Nike Dattani on 2013/03/27/6:40PM GMT
+%% COLOR DEFINITIONS   Taken from Kristjan Jonasson's FEX "RGB triple of color name, version 2": http://www.mathworks.com/matlabcentral/fileexchange/24497-rgb-triple-of-color-name-version-2, with ReptileGreen, BirdOrange and InsectBrown added manually by Nike Dattani on 2013/03/27/6:40PM GMT
 function rgb = rgb(s)
   persistent num name
   if isempty(num) % First time rgb is called
@@ -249,6 +257,7 @@ function [hex,name] = getcolors()
     '8B','45','13', 'SaddleBrown'
     'A0','52','2D', 'Sienna'
     '80','00','00', 'Maroon'
+    '66','33','00', 'InsectBrown'
     %Green colors
     '00','80','00', 'Green'
     '98','FB','98', 'PaleGreen'
@@ -274,6 +283,7 @@ function [hex,name] = getcolors()
     '55','6B','2F', 'DarkOliveGreen'
     '00','80','80', 'Teal'
     '00','BB','00', 'ReptileGreen'
+    '00','FF','CC', 'AmphibianTurquoise'
     
     %Blue colors
     '00','00','FF', 'Blue'
