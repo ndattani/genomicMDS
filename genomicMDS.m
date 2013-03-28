@@ -21,7 +21,7 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
     disp(['Loading the excel sheet containing the specifications for figure ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeLoadExcelSheet) ' seconds']);
     taxaToInclude=taxaToInclude';
     %% If there's a loaded data set, here we filter out the ones included in taxaToInclude. If there's no loaded data set, here we get the appropriate gene structure arrays using GETGENBANK
-    filteredDataSet=zeros(length(allSpecies),length(taxaToInclude));numberOfOrganismsInEachTaxon=zeros(size(taxaToInclude,2),1);shouldWeKeepThisOrganism=0;chosenOrganismIndex=1;
+    filteredDataSet=zeros(length(allSpecies),length(taxaToInclude));numberOfOrganismsInEachTaxon=zeros(size(taxaToInclude,2),1);numberOfOrganismsInEachTaxonGroupForLegend=zeros(length(unique(taxaToInclude(2,:))),1);shouldWeKeepThisOrganism=0;chosenOrganismIndex=1;
     warning off all
     for i=1:length(allSpecies) %if this loop is slow, consider preallocating the structure. according to this http://blogs.mathworks.com/loren/2008/02/01/structure-initialization/ perhaps the best way to do this is the do the loop backwards, so that the last entry of gene is defined first, that way the hwole structure is built in advance.
         %temp=getgenbank(allSpecies{i});
@@ -39,7 +39,16 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
             end
         end
     end
-    disp(['Total number of organisms in unfiltered dataset:' num2str(i)])
+    totalNumberOfOrganisms=i;
+    
+    taxaGroupsToIncludeInLegend=unique(taxaToInclude(2,:));
+    for i=1:length(numberOfOrganismsInEachTaxon)
+        for j=1:length(numberOfOrganismsInEachTaxonGroupForLegend)
+            if strcmp(taxaToInclude(2,i),taxaGroupsToIncludeInLegend(j)); numberOfOrganismsInEachTaxonGroupForLegend(j)=numberOfOrganismsInEachTaxonGroupForLegend(j)+numberOfOrganismsInEachTaxon(i); end
+        end
+    end
+    
+    disp(['Total number of organisms in unfiltered dataset:' num2str(totalNumberOfOrganisms)])
     %% Make a gene structure array called geneData which is the relavent subset of the gene structure array allSpecies, and assign the appopriate colors to organisms according to their taxa
     for i=1:length(geneData) % can't include this in the loop above because some structures will already have the fileds 'taxonForOurPurposes' and 'color' but we'll be assigning geneData(i+1)=allSpecies(j) where allSpecies(j) does not have those fields, so we'll get the error "subscripted assignment between dissimilar structures", look into a way to fix this! Perhaps just add those fields as empty shit to the whole allOrganisms structure
         for k=1:size(taxaToInclude,2) % using length will run into problems when there' less than three taxa to include, because taxaToInclude will have more rows than columns.
@@ -89,13 +98,18 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
     tic;
     figure(sheet);
     hold('on')
-    %organismsToExcludeFromPlot=506:562;
+      
+    %organismsToExcludeFromPlot=506:562; % combined with line 94 to remove organisms form plot
     for i = 1:length(geneData)
-        %if ~ismember(indices(i),organismsToExcludeFromPlot)
-        for j=1:size(taxaToInclude,2)
-            %for j=[3]
-            if strcmp(geneData(i).taxonForLegend,taxaToInclude{2,j})
+        %if ~ismember(indices(i),organismsToExcludeFromPlot) % combined with line 92 to remove organisms from plot 
+        for j=1:length(taxaGroupsToIncludeInLegend)
+            if strcmp(geneData(i).taxonForLegend,taxaGroupsToIncludeInLegend(j))
                 plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',7,'MarkerFaceColor',rgb(geneData(i).color),'MarkerEdgeColor',rgb(geneData(i).color)); % with black outline
+%                 for ii=1:length(unique(taxaToInclude{2,j})) % # of unique groups for legend entries
+%                     if strcmp(geneData(i).taxonForLegend,taxaToInclude{2,j})
+%                 set(plotHandle(j),'Parent',childrenOfAxesForGroupingLegendEntries())
+%                     end
+%                end
                 if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+0.005, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', rgb(geneData(i).color));end;
                 %plotHandle(j)=plot3(Y(i,1),Y(i,2),Y(i,3),strcat(geneData(i).color,'o'),'MarkerSize',6,'MarkerFaceColor',geneData(i).color);
             end
@@ -110,10 +124,11 @@ axis([-desiredSizeOfBorder desiredSizeOfBorder -desiredSizeOfBorder desiredSizeO
 %     fill([0.995 0.995  1.13    1.13],[0.995  1.13   1.13  0.995],'k') % top right corner
     hold('on');box('on');
     set(gca,'XMinorTick','on','YMinorTick','on','LineWidth',3,'FontSize',16 );
-    legendHandle=legend(plotHandle,strcat(taxaToInclude(2,:).',{' ('}, cellstr(num2str(numberOfOrganismsInEachTaxon)),{')'}));
+  
+    legendHandle=legend(plotHandle,strcat(taxaGroupsToIncludeInLegend.',{' ('}, cellstr(num2str(numberOfOrganismsInEachTaxonGroupForLegend)),{')'}));
     set(legendHandle,'Interpreter','latex','FontSize',24,'LineWidth',3,'Position',[0.747672758188061 0.753355153875044 0.134706814580032 0.139318885448916]);
     legendHandleChildren=get(legendHandle,'children');set(legendHandleChildren([1:3:end]),'MarkerSize',20)
-    % uistack(legendHandle,'top'); doesn't seem to work
+    uistack(plotHandle,'bottom');uistack(legendHandle,'top'); % doesn't seem to work
     axesHandle=copyobj(gca,gcf);set(axesHandle,'xaxislocation','top','yaxislocation','right');
     hold('off');elapsedTimeFigure=toc;
     disp(['Plotting the figure ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeFigure) ' seconds']);
