@@ -45,7 +45,7 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
         for k=1:size(taxaToInclude,2) % using length will run into problems when there' less than three taxa to include, because taxaToInclude will have more rows than columns.
             temp=geneData(i).SourceOrganism';
             if mod(isempty(strfind(temp(1:end),taxaToInclude{1,k}))+1,2)
-                geneData(i).taxonForOurPurposes=taxaToInclude{1,k};geneData(i).taxonForLegend=taxaToInclude{2,k};geneData(i).color=taxaToInclude{3,k};
+                geneData(i).taxonForOurPurposes=taxaToInclude{1,k};geneData(i).taxonForLegend=taxaToInclude{2,k};geneData(i).color=taxaToInclude{3,k};geneData(i).MarkerEdgeColor=taxaToInclude{4,k};
                 geneData(i).whetherOrNotToPlotNumber=whetherOrNotToPlotNumbers(k);
             end
         end
@@ -95,7 +95,7 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
         for j=1:size(taxaToInclude,2)
             %for j=[3]
             if strcmp(geneData(i).taxonForLegend,taxaToInclude{2,j})
-                plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',7,'MarkerFaceColor',rgb(geneData(i).color),'MarkerEdgeColor','k'); % with black outline
+                plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',7,'MarkerFaceColor',rgb(geneData(i).color),'MarkerEdgeColor',rgb(geneData(i).color)); % with black outline
                 if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+0.005, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', rgb(geneData(i).color));end;
                 %plotHandle(j)=plot3(Y(i,1),Y(i,2),Y(i,3),strcat(geneData(i).color,'o'),'MarkerSize',6,'MarkerFaceColor',geneData(i).color);
             end
@@ -122,7 +122,7 @@ axis([-desiredSizeOfBorder desiredSizeOfBorder -desiredSizeOfBorder desiredSizeO
     %% Print the excel file with information about each species   
     if writeToExcel==1; % it will take ages if you're working on a remote machine
     tic;
-    columnHeader = {'NUMBER','X-COORDINATES', 'Y-CORDINTATES','ACCESSION NUMBER','NAME','SEQUENCE LENGTH','COLOR','TAXA'};
+    columnHeader = {'NUMBER','X-COORDINATES', 'Y-CORDINTATES','ACCESSION NUMBER','NAME','SEQUENCE LENGTH','COLOR','MARKER-EDGE-COLOR','TAXA'};
     
     Species_Information_For_Spreadsheet=cell(length(geneData),27); % 27 is kind of arbitrary. I'm just hoping to make sure I have enough columns for all the taxonomic categories, some organisms have more of these than others and I don't know what the largest number of them is
     for i=1:length(geneData)
@@ -131,6 +131,7 @@ axis([-desiredSizeOfBorder desiredSizeOfBorder -desiredSizeOfBorder desiredSizeO
         Species_Information_For_Spreadsheet(i,5)=cellstr(geneData(i).SourceOrganism(1,1:end));      % Name of species
         Species_Information_For_Spreadsheet(i,6)=cellstr(geneData(i).LocusSequenceLength);          % Sequence length
         Species_Information_For_Spreadsheet(i,7)=cellstr(geneData(i).color);                        % Color
+        Species_Information_For_Spreadsheet(i,7)=cellstr(geneData(i).MarkerEdgeColor);              % Marker edge color
         Species_Taxa=strtrim(regexp(sprintf((geneData(i).SourceOrganism(2:end,:))'),';','split'));  % turn SourceOrganism for species i into a 1xN cell array of taxon names
         for j=1:length(Species_Taxa) 
         Species_Information_For_Spreadsheet(i,7+j)=Species_Taxa(j);                                 
