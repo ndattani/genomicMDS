@@ -41,7 +41,7 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
     end
     totalNumberOfOrganisms=i;
     
-    taxaGroupsToIncludeInLegend=unique(taxaToInclude(2,:));
+    taxaGroupsToIncludeInLegend=unique(taxaToInclude(2,:),'stable'); % without setOrder='stable' , they come out alphabetical, and you'll get amphibians before fish, in the legend, despite it being the other way around in the excel file
     for i=1:length(numberOfOrganismsInEachTaxon)
         for j=1:length(numberOfOrganismsInEachTaxonGroupForLegend)
             if strcmp(taxaToInclude(2,i),taxaGroupsToIncludeInLegend(j)); numberOfOrganismsInEachTaxonGroupForLegend(j)=numberOfOrganismsInEachTaxonGroupForLegend(j)+numberOfOrganismsInEachTaxon(i); end
@@ -97,14 +97,15 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
     %% Make the figure
     tic;
     figure(sheet);
+    %set(figure(sheet),'position',[200 200 500 500]);
     hold('on')
-      
+    
     %organismsToExcludeFromPlot=506:562; % combined with line 94 to remove organisms form plot
     for i = 1:length(geneData)
         %if ~ismember(indices(i),organismsToExcludeFromPlot) % combined with line 92 to remove organisms from plot 
         for j=1:length(taxaGroupsToIncludeInLegend)
             if strcmp(geneData(i).taxonForLegend,taxaGroupsToIncludeInLegend(j))
-                plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',7,'MarkerFaceColor',rgb(geneData(i).color),'MarkerEdgeColor',rgb(geneData(i).color)); % with black outline
+                plotHandle(j)=plot(Y(i,1),Y(i,2),'o','MarkerSize',12,'MarkerFaceColor',rgb(geneData(i).color),'MarkerEdgeColor',rgb(geneData(i).MarkerEdgeColor),'LineWidth',0.5); % with black outline
 %                 for ii=1:length(unique(taxaToInclude{2,j})) % # of unique groups for legend entries
 %                     if strcmp(geneData(i).taxonForLegend,taxaToInclude{2,j})
 %                 set(plotHandle(j),'Parent',childrenOfAxesForGroupingLegendEntries())
@@ -123,13 +124,13 @@ axis([-desiredSizeOfBorder desiredSizeOfBorder -desiredSizeOfBorder desiredSizeO
 %     fill([0.995 0.995  1.13    1.13],[-1.13 -0.995 -0.995 -1.13],'k') % bottom right corner
 %     fill([0.995 0.995  1.13    1.13],[0.995  1.13   1.13  0.995],'k') % top right corner
     hold('on');box('on');
-    set(gca,'XMinorTick','on','YMinorTick','on','LineWidth',3,'FontSize',16 );
-  
-    legendHandle=legend(plotHandle,strcat(taxaGroupsToIncludeInLegend.',{' ('}, cellstr(num2str(numberOfOrganismsInEachTaxonGroupForLegend)),{')'}));
-    set(legendHandle,'Interpreter','latex','FontSize',24,'LineWidth',3,'Position',[0.747672758188061 0.753355153875044 0.134706814580032 0.139318885448916]);
-    legendHandleChildren=get(legendHandle,'children');set(legendHandleChildren([1:3:end]),'MarkerSize',20)
-    uistack(plotHandle,'bottom');uistack(legendHandle,'top'); % doesn't seem to work
+    set(gca,'XMinorTick','on','YMinorTick','on','LineWidth',3,'FontSize',25,'TickDir','out','TickLength',[0.03 0.03],'XTick',-1:0.2:1,'YTick',-1:0.2:1,'Position',[0.129375 0.0717437722419927 0.775 0.815],'FontWeight','light');
+    
+    legendHandle=legend(plotHandle,strcat('\textbf{',taxaGroupsToIncludeInLegend.',{' ('}, cellstr(num2str(numberOfOrganismsInEachTaxonGroupForLegend)),{')'},'}'));
+    set(legendHandle,'Interpreter','latex','FontSize',30,'LineWidth',3,'Position',[0.747672758188061 0.753355153875044 0.134706814580032 0.139318885448916]);
     axesHandle=copyobj(gca,gcf);set(axesHandle,'xaxislocation','top','yaxislocation','right');
+    legendHandleChildren=get(legendHandle,'children');set(legendHandleChildren(1:3:end),'MarkerSize',20) 
+    uistack(plotHandle,'bottom');uistack(legendHandle,'top'); 
     hold('off');elapsedTimeFigure=toc;
     disp(['Plotting the figure ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeFigure) ' seconds']);
     maximumError=max(abs(squareform(ssimDistances) - pdist(Y(:,1:2))));averageError=sum(abs(squareform(ssimDistances) - pdist(Y(:,1:2))))/(length(squareform(ssimDistances)));averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2=(averageError/(2*sqrt(2)))*100; %longest possible line in a square of length 2 is 2*sqrt(2)
