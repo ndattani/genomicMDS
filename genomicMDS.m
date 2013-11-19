@@ -2,8 +2,8 @@
 %% The owners of this code are Abu Sadat Md. Sayem, Nathanlial Bryans, Nike S. Dattani, and Ronghai Tu. The copyright is currently owned by Nike S. Dattani.
 
 %% NO PART OF THIS CODE IS TO BE MODIFIED OUTSIDE OF GIT. LEGAL CONSEQUENCES WILL APPLY
-function genomicMDS(dataFile,vectorOfSheetsToUse,writeToExcel)
-close('all'); % it's important to close the figures because in case hole('off') wasn't called, this will ensure we don't have the new points plotted over the old points (which can look bizarre since matlab's MDS doesn't seem to be deterministic, so plotting the same dataset twice could give two different things on top of each other
+function [Y, geneData, indices]=genomicMDS(dataFile,vectorOfSheetsToUse,writeToExcel)
+%close('all'); % it's important to close the figures because in case hold('off') wasn't called, this will ensure we don't have the new points plotted over the old points (which can look bizarre since matlab's MDS doesn't seem to be deterministic, so plotting the same dataset twice could give two different things on top of each other
 % clearvars -except dataFile firstFigureNumber lastFigureNumber; % might want to do because datafile might be 2GB and might be in the workspace
 % disp(['All variables except for allSpecies cleared !']);
 %% A file containing all Matlab's information on each accession number
@@ -111,7 +111,7 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
 %                 set(plotHandle(j),'Parent',childrenOfAxesForGroupingLegendEntries())
 %                     end
 %                end
-                if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+0.005, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', rgb(geneData(i).color));end;
+                if geneData(i).whetherOrNotToPlotNumber==1;text(Y(i,1)+0.015, Y(i,2), int2str(indices(i)), 'HorizontalAlignment', 'left', 'Color', rgb(geneData(i).color));end;
                 %plotHandle(j)=plot3(Y(i,1),Y(i,2),Y(i,3),strcat(geneData(i).color,'o'),'MarkerSize',6,'MarkerFaceColor',geneData(i).color);
             end
         end
@@ -244,6 +244,7 @@ function [hex,name] = getcolors()
     'FF','63','47', 'Tomato'
     'FF','45','00', 'OrangeRed'
     'FF','88','00', 'BirdOrange'
+    'FF','66','00', 'FungiOrange'
     %Yellow colors
     'FF','FF','00', 'Yellow'
     'FF','FF','E0', 'LightYellow'

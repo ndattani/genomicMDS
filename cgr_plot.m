@@ -101,6 +101,7 @@ hold on
 % text(10.05,0,'T');
 
 %%%
+axis square
 scatter(point(:,1),point(:,2),1,'black')
 line(A,C,'Color','k'); % This makes the box surrounding the plot
 line(C,G,'Color','k');
@@ -119,11 +120,17 @@ line(T,A,'Color','k');
 % set(gcf, 'color', 'white');
 % I= getframe(gcf,[0 0 pos(3) pos(4)]);
 
+%set(gca,'Position',[0 0 1 1]);set(gcf,'Position',[0 0 1 1])
+% ti = get(gca,'TightInset'); %http://www.mathworks.co.uk/matlabcentral/newsreader/view_thread/314017
+% set(gca,'Position',[ti(1) ti(2) 1-ti(3)-ti(1) 1-ti(4)-ti(2)]);
+set(gca, 'LooseInset', [0,0,0,0]); % http://undocumentedmatlab.com/blog/axes-looseinset-property/
+%set(gcf,'Visible', 'off')
+set(gcf,'Units','centimeters','Position',[2 2 15 15])
 I= getframe; % same as above three lines but without the massive border
 
 plot_output = I.cdata;
 
-set(gca,'Position',[0 0 1 1])
+
 hold off;
 
  %print(image,'-dpng',strcat(filename(1:(end)-6),'(',num2str(startNuc),'-',num2str(endNuc),')','.png'));

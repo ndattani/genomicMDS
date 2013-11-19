@@ -6,7 +6,7 @@
 %%
 clear all;
 %%
-outputFileName='2012-07-12-data';
+outputFileName='2012-07-12-data_square';
 %%
 tic;accessionNumbers=importdata('2012-07-12-accessionNumbers.txt');elapsedTimeLoadAccessionNumbers=toc;  %A file containing: Line 1: the http://www.ncbi.nlm.nih.gov/nuccore search query used to get this dataset, Lines 2 to end: the accession numbers
 disp(['Loading the file containing the accession numbers is done ! It took: ' num2str(elapsedTimeLoadAccessionNumbers) ' seconds']);
@@ -24,11 +24,18 @@ disp(['Getting gene bank information for all accession numbers is done ! It took
 %% 12 minutes for 578 species, 2 hours for 3100 species: NEED THE PICTURES TO BE VISIBLE, THEREFORE THE WINDOWS HAVE TO BE OPEN AND THE MONITOR HAS TO BE ON, IN ORDER FOR THIS TO WORK !
 allSpecies(1).CGR2dPixelMap=[];
 %matlabpool('open','12') %lines below didn't work with parfor because the figure didn't pop up, havne't tried to fix it
-for i=1:length(allSpecies)
+for i=1:2 % FOR SOME REASON, THE FIRST FIGURE IS COMING OUT AS 542 X 542, AND THE REST OF THEM ARE 541 X 541 .. 
     clf; % commenting this slows things down
     allSpecies(i).CGR2dPixelMap= cgr_plot(allSpecies(i).Sequence);
-    %     set(gcf,'Visible', 'off'); % commenting this and the one below speeds things up
-    %     figure('Visible', 'off');
+    allSpecies(i).CGR2dPixelMap = rgb2gray(allSpecies(i).CGR2dPixelMap); 
+    allSpecies(i).CGR2dPixelMap(1,:)=[];allSpecies(i).CGR2dPixelMap(end,:)=[];allSpecies(i).CGR2dPixelMap(:,1)=[];allSpecies(i).CGR2dPixelMap(:,end)=[];
+    %if mod(i,500)==0;save('dataForParticularDataSet.mat','allSpecies');end %saving the entire array takes less than a minute, so it's not a major speed issue to be doing this in case matlab crashes midway
+disp(['Getting the pixel map for the sequence of accession number ' num2str(i) ' is done !']);
+end
+
+for i=1:length(allSpecies) % 
+    clf; % commenting this slows things down
+    allSpecies(i).CGR2dPixelMap= cgr_plot(allSpecies(i).Sequence);
     allSpecies(i).CGR2dPixelMap = rgb2gray(allSpecies(i).CGR2dPixelMap); 
     allSpecies(i).CGR2dPixelMap(1,:)=[];allSpecies(i).CGR2dPixelMap(end,:)=[];allSpecies(i).CGR2dPixelMap(:,1)=[];allSpecies(i).CGR2dPixelMap(:,end)=[];
     %if mod(i,500)==0;save('dataForParticularDataSet.mat','allSpecies');end %saving the entire array takes less than a minute, so it's not a major speed issue to be doing this in case matlab crashes midway
