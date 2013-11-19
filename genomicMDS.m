@@ -1,9 +1,8 @@
 %% THIS CODE IS PROTECTED BY COPYRIGHT LAW.
-%% The owners of this code are Abu Sadat Md. Sayem, Nathanlial Bryans, Nike S. Dattani, and Ronghai Tu. The copyright is currently owned by Nike S. Dattani.
+%% The owners of this code are Abu Sadat Md. Sayem, Nathanlial Bryans, and Nike S. Dattani. The copyright is currently owned by Nike S. Dattani.
 
-%% NO PART OF THIS CODE IS TO BE MODIFIED OUTSIDE OF GIT. LEGAL CONSEQUENCES WILL APPLY
 function [Y, geneData, indices]=genomicMDS(dataFile,vectorOfSheetsToUse,writeToExcel)
-%close('all'); % it's important to close the figures because in case hold('off') wasn't called, this will ensure we don't have the new points plotted over the old points (which can look bizarre since matlab's MDS doesn't seem to be deterministic, so plotting the same dataset twice could give two different things on top of each other
+% close('all'); % it's important to close the figures because in case hold('off') wasn't called, this will ensure we don't have the new points plotted over the old points (which can look bizarre since matlab's MDS doesn't seem to be deterministic, so plotting the same dataset twice could give two different things on top of each other
 % clearvars -except dataFile firstFigureNumber lastFigureNumber; % might want to do because datafile might be 2GB and might be in the workspace
 % disp(['All variables except for allSpecies cleared !']);
 %% A file containing all Matlab's information on each accession number

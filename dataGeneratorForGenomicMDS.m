@@ -1,12 +1,9 @@
 %% THIS CODE IS PROTECTED BY COPYRIGHT LAW. 
-%% The owners of this code are Abu Sadat Md. Sayem, Nathanlial Bryans, Nike
-%% S. Dattani, and Ronghai Tu. The copyright is currently owned by Nike S. Dattani. 
+%% The owners of this code are Abu Sadat Md. Sayem, Nathanlial Bryans, Nike S. Dattani, and Ronghai Tu. The copyright is currently owned by Nike S. Dattani. 
 
-%% NO PART OF THIS CODE IS TO BE MODIFIED OUTSIDE OF GIT.
-%%
 clear all;
 %%
-outputFileName='2012-07-12-data_square';
+outputFileName='FILL_THIS_IN';
 %%
 tic;accessionNumbers=importdata('2012-07-12-accessionNumbers.txt');elapsedTimeLoadAccessionNumbers=toc;  %A file containing: Line 1: the http://www.ncbi.nlm.nih.gov/nuccore search query used to get this dataset, Lines 2 to end: the accession numbers
 disp(['Loading the file containing the accession numbers is done ! It took: ' num2str(elapsedTimeLoadAccessionNumbers) ' seconds']);
@@ -134,4 +131,3 @@ hold('on');box('on');
 set(gca,'XMinorTick','on','YMinorTick','on','LineWidth',3,'FontSize',16);
 legendHandle=legend(plotHandle,taxaToInclude{2,:});set(legendHandle,'Interpreter','latex','FontSize',16,'LineWidth',3,'Position',[0.747672758188061 0.753355153875044 0.134706814580032 0.139318885448916])
 toc;
-
