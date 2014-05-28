@@ -9,7 +9,7 @@ T=[10,0];                                 % the definition of point T
 startNuc=1;n=length(st);endNuc=n;
 
 point=zeros(endNuc-startNuc+6,2);         % the result matrix
-temp_center=(A+C+G+T)/4;                  % the initial center.
+temp_center=(A+C+G+T)/4;                  % the initial center
 
 point(1,:)=temp_center;
 point(2,:)=A;
@@ -18,7 +18,7 @@ point(4,:)=G;
 point(5,:)=T;
 
 for i=startNuc:endNuc;
-    switch st(i)                         % determine which base A,T,G,C it is.
+    switch st(i)                          % determine which letter the current base is
         case 'a'
             temp_p=A;                     % assign the corresponding vertex
         case 'g'
@@ -56,16 +56,19 @@ line(T,A,'Color','k');
 % pos = get(gcf,'Position');
 % set(gcf, 'color', 'white');
 % I= getframe(gcf,[0 0 pos(3) pos(4)]);
+
 %% Method 2
 % set(gca,'Position',[0 0 1 1]);set(gcf,'Position',[0 0 1 1])
 % ti = get(gca,'TightInset');               % http://www.mathworks.co.uk/matlabcentral/newsreader/view_thread/314017
 % set(gca,'Position',[ti(1) ti(2) 1-ti(3)-ti(1) 1-ti(4)-ti(2)]);
+
 %% Method 3
 set(gca, 'LooseInset', [0,0,0,0]);          % http://undocumentedmatlab.com/blog/axes-looseinset-property/
 % set(gcf,'Visible', 'off')
 set(gcf,'Units','centimeters','Position',[2 2 15 15])
 I= getframe;
 plot_output=I.cdata;
+
 %%
 hold('off');
 
