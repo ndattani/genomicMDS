@@ -5,21 +5,21 @@ function [Y, geneData, indices]=genomicMDS(dataFile,vectorOfSheetsToUse,writeToE
 % close('all'); % it's important to close the figures because in case hold('off') wasn't called, this will ensure we don't have the new points plotted over the old points (which can look bizarre since matlab's MDS doesn't seem to be deterministic, so plotting the same dataset twice could give two different things on top of each other
 % clearvars -except dataFile firstFigureNumber lastFigureNumber; % might want to do because datafile might be 2GB and might be in the workspace
 % disp(['All variables except for allSpecies cleared !']);
-%% A file containing all Matlab's information on each accession number
+%% 1. A file containing all Matlab's information on each accession number
 if isstruct(dataFile);
     allSpecies=dataFile;clear('dataFile'); % don't need to worry about memory duplication because it does 'lazy copying'
 else
     tic;load(dataFile);elapsedTimeLoadStructureArray=toc;  % file must contain the SSIM distances between all organisms
     disp(['Loading the gene structure array is done ! It took: ' num2str(elapsedTimeLoadStructureArray) ' seconds']);
 end
-%% Each sheet of the excel file generates a different figure, with different taxa included
+%% 2. Each sheet of the excel file generates a different figure, with different taxa included
 for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetIndex);
     disp(['FIGURE  ' num2str(sheet) ' !!!'])
     clearvars -except sheet allSpecies writeToExcel vectorOfSheetsToUse
     tic;[whetherOrNotToPlotNumbers,taxaToInclude,~]=xlsread('setsOfTaxaAndColors.xlsx',sheet);elapsedTimeLoadExcelSheet=toc;
     disp(['Loading the excel sheet containing the specifications for figure ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeLoadExcelSheet) ' seconds']);
     taxaToInclude=taxaToInclude';
-    %% If there's a loaded data set, here we filter out the ones included in taxaToInclude. If there's no loaded data set, here we get the appropriate gene structure arrays using GETGENBANK
+    %% 3. If there's a loaded data set, here we filter out the ones included in taxaToInclude. If there's no loaded data set, here we get the appropriate gene structure arrays using GETGENBANK
     filteredDataSet=zeros(length(allSpecies),length(taxaToInclude));numberOfOrganismsInEachTaxon=zeros(size(taxaToInclude,2),1);numberOfOrganismsInEachTaxonGroupForLegend=zeros(length(unique(taxaToInclude(2,:))),1);shouldWeKeepThisOrganism=0;chosenOrganismIndex=1;
     warning off all
     for i=1:length(allSpecies) %if this loop is slow, consider preallocating the structure. according to this http://blogs.mathworks.com/loren/2008/02/01/structure-initialization/ perhaps the best way to do this is the do the loop backwards, so that the last entry of gene is defined first, that way the hwole structure is built in advance.
@@ -48,7 +48,7 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
     end
     
     disp(['Total number of organisms in unfiltered dataset:' num2str(totalNumberOfOrganisms)])
-    %% Make a gene structure array called geneData which is the relavent subset of the gene structure array allSpecies, and assign the appopriate colors to organisms according to their taxa
+    %% 4. Make a gene structure array called geneData which is the relavent subset of the gene structure array allSpecies, and assign the appopriate colors to organisms according to their taxa
     for i=1:length(geneData) % can't include this in the loop above because some structures will already have the fileds 'taxonForOurPurposes' and 'color' but we'll be assigning geneData(i+1)=allSpecies(j) where allSpecies(j) does not have those fields, so we'll get the error "subscripted assignment between dissimilar structures", look into a way to fix this! Perhaps just add those fields as empty shit to the whole allOrganisms structure
         for k=1:size(taxaToInclude,2) % using length will run into problems when there' less than three taxa to include, because taxaToInclude will have more rows than columns.
             temp=geneData(i).SourceOrganism';
@@ -59,7 +59,7 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
         end
     end
     disp(['Total number of organisms in filtered dataset:' num2str(i)])
-    %% Make an ssim distance matrix, using the ssim distances stored in the structure array allSpecies
+    %% 5. Make an ssim distance matrix, using the ssim distances stored in the structure array allSpecies
     ssimDistances=zeros(length(indices));
     for i=1:length(indices)
         ssimDistances(i,:)=allSpecies(indices(i)).ssimDistances(indices); % could probably also do with the structure array geneData right ?
@@ -67,10 +67,10 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
     % Or if if you have matrix for ALL organisms already:
     %ssimDistances(indices,indices)=ssim(indices,indices);
     disp(['Creating the ssim distance matrix for figure ' num2str(sheet) ' is done !']);
-    %% Classical Multidimensional Scaling
+    %% 6. Classical Multidimensional Scaling
     tic;Y = cmdscale(squareform(ssimDistances));elapsedTimeMDS=toc;
     disp(['MDS calculation for figure ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeMDS) ' seconds']);
-    %% Rotations and Scaling
+    %% 7. Rotations and Scaling
     desiredSize=1;
     desiredSizeOfBorder=desiredSize*1.1;
     
@@ -93,7 +93,7 @@ for sheetIndex=1:length(vectorOfSheetsToUse);sheet=vectorOfSheetsToUse(sheetInde
     % Y(:,1)=Y(:,1)*offsetX;
     Y(:,1)=2*(Y(:,1)-currentSmallestSizeX)/(currentLargestSizeX-currentSmallestSizeX)-1; % scale x-values to be between -1 and 1
     disp(['The MDS data for figure ' num2str(sheet) ' has been rescaled for optimal display!']);
-    %% Make the figure
+    %% 8. Make the figure
     tic;
     figure(sheet);
     %set(figure(sheet),'position',[200 200 500 500]);
@@ -134,7 +134,7 @@ axis([-desiredSizeOfBorder desiredSizeOfBorder -desiredSizeOfBorder desiredSizeO
     disp(['Plotting the figure ' num2str(sheet) ' is done ! It took: ' num2str(elapsedTimeFigure) ' seconds']);
     maximumError=max(abs(squareform(ssimDistances) - pdist(Y(:,1:2))));averageError=sum(abs(squareform(ssimDistances) - pdist(Y(:,1:2))))/(length(squareform(ssimDistances)));averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2=(averageError/(2*sqrt(2)))*100; %longest possible line in a square of length 2 is 2*sqrt(2)
     disp(['The Maximum Error for the plot is ' num2str(maximumError)]);disp(['The Average Error for the plot is ' num2str(averageError)]);disp(['The Percentage of Error for the plot is ' num2str(averageErrorAsPercentageOfTheMaximumPossibleLineLengthInAsquareOfLength2)]);
-    %% Print the excel file with information about each species   
+    %% 9. Print the excel file with information about each species   
     if writeToExcel==1; % it will take ages if you're working on a remote machine
     tic;
     columnHeader = {'NUMBER','X-COORDINATES', 'Y-CORDINTATES','ACCESSION NUMBER','NAME','SEQUENCE LENGTH','COLOR','MARKER-EDGE-COLOR','TAXA'};
@@ -165,7 +165,7 @@ axis([-desiredSizeOfBorder desiredSizeOfBorder -desiredSizeOfBorder desiredSizeO
 end % loop through each sheet (each choice of taxa for a particular figure) of excel file
 end % function (this end statement is not necessary, but once when I didn't have it there and I had an extra end statement in the file, I didn't get an error because it assigned that extra end statement to end the function)
 
-%% COLOR DEFINITIONS   Taken from Kristjan Jonasson's FEX "RGB triple of color name, version 2": http://www.mathworks.com/matlabcentral/fileexchange/24497-rgb-triple-of-color-name-version-2, with ReptileGreen, BirdOrange and InsectBrown added manually by Nike Dattani on 2013/03/27/6:40PM GMT
+%% 10. COLOR DEFINITIONS   Taken from Kristjan Jonasson's FEX "RGB triple of color name, version 2": http://www.mathworks.com/matlabcentral/fileexchange/24497-rgb-triple-of-color-name-version-2, with ReptileGreen, BirdOrange and InsectBrown added manually by Nike Dattani on 2013/03/27/6:40PM GMT
 function rgb = rgb(s)
   persistent num name
   if isempty(num) % First time rgb is called

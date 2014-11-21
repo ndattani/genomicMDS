@@ -1,5 +1,4 @@
 %% THIS CODE IS PROTECTED BY COPYRIGHT LAW. 
-%% The owners of this code are Abu Sadat Md. Sayem, Nathanlial Bryans, Nike S. Dattani, and Ronghai Tu. The copyright is currently owned by Nike S. Dattani. 
 
 clear all;
 %%
